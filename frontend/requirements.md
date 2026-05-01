@@ -1,1 +1,1 @@
-Front-end requirements for this project:
+Frontend requirements for this project:
