@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digestomatic - AI Command Center</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            
+            --accent-temp: #ef4444;
+            --accent-humid: #3b82f6;
+            --accent-methane: #10b981;
+            --accent-ai: #a855f7;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 1300px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -0.025em; }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #time-display { font-size: 1.1rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .theme-switch {
+            display: inline-block;
+            height: 24px;
+            position: relative;
+            width: 48px;
+        }
+
+        .theme-switch input { display: none; }
+
+        .slider {
+            background-color: #cbd5e1;
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            background-color: #fff;
+            bottom: 3px;
+            content: "";
+            height: 18px;
+            left: 3px;
+            position: absolute;
+            transition: .4s;
+            width: 18px;
+            border-radius: 50%;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+
+        input:checked + .slider { background-color: #3b82f6; }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .telemetry-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .sidebar-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .card-value { font-size: 2.3rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .temp-card { border-top: 4px solid var(--accent-temp); }
+        .humid-card { border-top: 4px solid var(--accent-humid); }
+        .methane-card { border-top: 4px solid var(--accent-methane); }
+        
+        .ai-status-card { 
+            border-top: 4px solid var(--accent-ai); 
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ai-log-display {
+            background-color: rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            flex-grow: 1;
+            overflow-y: auto;
+            max-height: 480px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .ai-status-entry {
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .ai-status-entry:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .ai-time {
+            font-size: 0.75rem;
+            color: var(--accent-ai);
+            font-weight: bold;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .command-card {
+            border-top: 4px solid var(--text-muted);
+        }
+
+        .command-input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .command-input-group input {
+            flex-grow: 1;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px;
+            color: var(--text-main);
+            font-family: inherit;
+        }
+
+        .command-input-group input:focus {
+            outline: 1px solid var(--accent-ai);
+        }
+
+        .command-input-group button {
+            background-color: var(--accent-ai);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .command-input-group button:hover {
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            width: 100%;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            box-sizing: border-box;
+            height: 400px;
+        }
+
+        #debug-panel {
+            width: 100%;
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 10px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            height: 80px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <header>
+            <h1>Digestomatic</h1>
+            <div class="header-controls">
+                <div id="time-display">Loading...</div>
+                <div class="theme-switch-wrapper">
+                    <span>Light</span>
+                    <label class="theme-switch" for="checkbox">
+                        <input type="checkbox" id="checkbox" checked />
+                        <div class="slider"></div>
+                    </label>
+                    <span>Dark</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-layout">
+            
+            <section class="telemetry-column">
+                <div class="metrics-grid">
+                    <div class="card temp-card">
+                        <div class="card-title">Temperature</div>
+                        <div class="card-value"><span id="temp">--</span>°C</div>
+                    </div>
+                    <div class="card humid-card">
+                        <div class="card-title">Humidity</div>
+                        <div class="card-value"><span id="humid">--</span>%</div>
+                    </div>
+                    <div class="card methane-card">
+                        <div class="card-title">Methane (CH₄)</div>
+                        <div class="card-value"><span id="methane">--</span> ppm</div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="liveChart"></canvas>
+                </div>
+
+                <div id="debug-panel">System Initializing...<br></div>
+            </section>
+            
+            <section class="sidebar-column">
+                <div class="card ai-status-card">
+                    <div class="card-title">✨ AI Insights &amp; Status</div>
+                    <div class="ai-log-display" id="ai-logs"></div>
+                </div>
+
+                <div class="card command-card">
+                    <div class="card-title">Send Command to Digester</div>
+                    <div class="command-input-group">
+                        <input type="text" id="cmd-field" placeholder="e.g., /vent_gas, /heat_on..." onkeydown="if(event.key === 'Enter') sendCommand()"/>
+                        <button onclick="sendCommand()">Send</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        let sensorChart = null;
+        const MAX_DATA_POINTS = 20;
+
+        let simTemp = 36.5;
+        let simHumid = 82.0;
+        let simMethane = 405;
+
+        function logDebug(msg) {
+            const panel = document.getElementById('debug-panel');
+            panel.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+            panel.scrollTop = panel.scrollHeight;
+        }
+
+        window.onload = function() {
+            logDebug("Digestomatic Command interface initialized.");
+            
+            if (typeof Chart === 'undefined') {
+                logDebug("ERROR: Chart.js framework missed or blocked loading.");
+                return;
+            }
+
+            const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+            toggleSwitch.addEventListener('change', switchTheme);
+
+            initChart();
+
+            setInterval(updateTime, 1000);
+            setInterval(simulateIncomingData, 2000);
+            
+            generateMockAIInsight("System online. Waiting for primary biodigestion monitoring cycles to normalize stability profiles.");
+        };
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('time-display').innerText = now.toLocaleTimeString();
+        }
+
+        function generateMockAIInsight(customText = null) {
+            const container = document.getElementById('ai-logs');
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            let insightText = customText;
+            
+            if (!insightText) {
+                if (simMethane > 430) {
+                    insightText = `⚠️ High Methane activity detected (${simMethane} ppm). Anaerobic respiration is scaling rapidly. Maintain current venting protocols.`;
+                } else if (simTemp < 35.5) {
+                    insightText = `📉 Temperature has drifted down to ${simTemp.toFixed(1)}°C. Methanogenic bacteria metabolic pathways are slowing. Consider engaging secondary slurry heating cycles.`;
+                } else {
+                    insightText = `✅ System conditions stable. Temperature (${simTemp.toFixed(1)}°C) matches nominal mesophilic targets. Decomposition rates are running efficiently.`;
+                }
+            }
+
+            const entry = document.createElement('div');
+            entry.className = 'ai-status-entry';
+            entry.innerHTML = `<span class="ai-time">${timestamp}</span> <span>${insightText}</span>`;
+            
+            container.insertBefore(entry, container.firstChild);
+        }
+
+        function sendCommand() {
+            const field = document.getElementById('cmd-field');
+            const cmd = field.value.trim();
+            if (!cmd) return;
+
+            logDebug(`[COMMAND SENT]: ${cmd}`);
+            generateMockAIInsight(`💻 Command executed by operator: "${cmd}". Dispatching hardware instruction array downstream...`);
+            field.value = '';
+        }
+
+        function switchTheme(e) {
+            const theme = e.target.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            logDebug(`Theme switch flipped to: ${theme}`);
+            
+            // INTENTIONAL CHANGE: No chart JavaScript code is run here. 
+            // The browser's CSS variable engine re-colors the canvas naturally.
+        }
+
+        let loopCounter = 0;
+
+        function simulateIncomingData() {
+            simTemp += (Math.random() - 0.5) * 0.5;
+            simHumid += (Math.random() - 0.5) * 0.3;
+            simMethane += Math.floor((Math.random() - 0.48) * 12);
+
+            if (simHumid < 0) simHumid = 0; if (simHumid > 100) simHumid = 100;
+            if (simMethane < 0) simMethane = 0;
+
+            document.getElementById('temp').innerText = simTemp.toFixed(1);
+            document.getElementById('humid').innerText = simHumid.toFixed(1);
+            document.getElementById('methane').innerText = simMethane;
+
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            
+            if (sensorChart) {
+                if (sensorChart.data.labels.length >= MAX_DATA_POINTS) {
+                    sensorChart.data.labels.shift();
+                    sensorChart.data.datasets[0].data.shift();
+                    sensorChart.data.datasets[1].data.shift();
+                }
+                
+                sensorChart.data.labels.push(timestamp);
+                sensorChart.data.datasets[0].data.push(simTemp);
+                sensorChart.data.datasets[1].data.push(simMethane);
+                
+                // Only here does the chart push data frames to the screen
+                sensorChart.update();
+            }
+
+            loopCounter++;
+            if (loopCounter % 5 === 0) {
+                generateMockAIInsight();
+            }
+        }
+
+        function initChart() {
+            try {
+                // We resolve computed CSS variables from the DOM body style
+                const bodyStyle = getComputedStyle(document.body);
+                
+                const ctx = document.getElementById('liveChart').getContext('2d');
+                sensorChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Temperature (°C)',
+                                data: [],
+                                borderColor: '#ef4444',
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                yAxisID: 'yTemp',
+                                tension: 0.3,
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'Methane (ppm)',
+                                data: [],
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                yAxisID: 'yMethane',
+                                tension: 0.3,
+                                borderWidth: 2
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { mode: 'index', intersect: false },
+                        scales: {
+                            x: {
+                                // FEATURE CHANGER: Use dynamic string paths directly mapped to CSS
+                                grid: { color: () => getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() },
+                                ticks: { color: () => getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }
+                            },
+                            yTemp: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: { display: true, text: 'Temperature (°C)', color: '#ef4444' },
+                                grid: { color: () => getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() },
+                                ticks: { color: () => getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }
+                            },
+                            yMethane: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: { display: true, text: 'Methane (ppm)', color: '#10b981' },
+                                grid: { drawOnChartArea: false },
+                                ticks: { color: () => getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }
+                            }
+                        },
+                        plugins: {
+                            legend: { 
+                                labels: { color: () => getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim() } 
+                            }
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("Layout initialization error:", err);
+            }
+        }
+    </script>
+</body>
+</html>
