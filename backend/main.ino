@@ -1,6 +1,6 @@
-#include "customTimer.h"
-#include "DHT11.h"
-#include "DS18B20.h"
+#include "customTimer.ino"
+#include "DHT11.ino"
+#include "DS18B20.ino"
 
 CustomTimer sensorTimer(3000); // 3-second interval
 
