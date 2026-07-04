@@ -14,8 +14,8 @@ void initDS18B20() {
 }
 
 float readDS18B20() {
-    ds18b20.requestTemperatures(); // in degrees Celsius
-    return ds18b20.getTempCByIndex(0);
+    ds18b20.requestTemperatures();
+    return ds18b20.getTempCByIndex(0); // Celsius
 }
 
 #endif

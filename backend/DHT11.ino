@@ -12,14 +12,12 @@ void initDHT() {
     dht.begin();
 }
 
-struct DHTData {
-    float temperature;
-};
+float readDHT() {
+    return dht.readTemperature(); // Celsius
+}
 
-DHTData readDHT() {
-    DHTData data;
-    data.temperature = dht.readTemperature(); // in degrees Celsius
-    return data;
+float readDHTHumidity() {
+    return dht.readHumidity(); // %RH
 }
 
 #endif
