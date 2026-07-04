@@ -11,8 +11,8 @@
 #include "mq135.ino"
 
 // ── WiFi Config ───────────────────────────────────────────────────────────────
-const char* WIFI_SSID     = "T&C";
-const char* WIFI_PASSWORD = "T16122024C";
+const char* WIFI_SSID     = "WIFI_SSID";
+const char* WIFI_PASSWORD = "WIFI_PASSWORD";
 
 // ── MQTT Config ───────────────────────────────────────────────────────────────
 const char* MQTT_SERVER = "broker.hivemq.com";
