@@ -3,7 +3,7 @@
 
 // ====================== MQ-135 Configuration ======================
 #define MQ135_PIN      35      // Analog pin
-#define MQ135_RL       1.0f    // Load resistor (kΩ) - change to 10.0 if your module uses 10kΩ
+#define MQ135_RL       10.0f    // Load resistor (kΩ) - change to 10.0 if your module uses 10kΩ
 #define MQ135_DIVIDER  0.353f  // Voltage divider ratio
 #define MQ135_VCC      5.0f
 
