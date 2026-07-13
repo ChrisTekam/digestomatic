@@ -1,0 +1,10 @@
+Make sure all circuits are properly connected and grounded before starting.
+
+First, check IP of laptop that's connected via mobile hotspot using ipconfig /all within CMD prompt.
+Second, update the IP if it's different than 10.210.232.202.
+Third, make any necessary changes to the sketch and upload it to the ESP32. If no changes were made, continue without uploading.
+Fourth, launch Ollama.
+Fifth, open CMD prompt in the filemap of Mosquitto and run mosquitto -c mosquitto.conf -v
+Sixth, open CMD prompt in the digestomatic main folder and run python foria_bridge.py
+Seventh, launch the web dashboard and login with username Eudaimonia and password Digestomatic.
+Eighth and final step, check that Foria is able to receive prompts, the measurement data is being sent and that motor stirs upon request.

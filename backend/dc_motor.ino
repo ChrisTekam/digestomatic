@@ -16,7 +16,7 @@
 // ── Stirring behaviour ──────────────────────────────────────────────────────────
 #define STIR_DURATION_MS      60000UL   // stir for 1 minute
 #define METHANE_DIP_THRESHOLD 5.0f      // ppm drop vs. previous reading = "dip"
-#define AUTO_STIR_COOLDOWN_MS 120000UL  // ignore further dips for 2 min after a stir
+#define AUTO_STIR_COOLDOWN_MS 120000UL  // ignore further dips for 2 minutes stirring
 
 class DCMotor {
 private:

@@ -11,11 +11,11 @@
 #include "mq135.ino"
 
 // ── WiFi Config ───────────────────────────────────────────────────────────────
-const char* WIFI_SSID     = "WIFI_SSID";
-const char* WIFI_PASSWORD = "WIFI_PASSWORD";
+const char* WIFI_SSID     = "Chris' A54";
+const char* WIFI_PASSWORD = "hello123";
 
 // ── MQTT Config ───────────────────────────────────────────────────────────────
-const char* MQTT_SERVER = "broker.hivemq.com";
+const char* MQTT_SERVER = "10.210.232.202";
 const int   MQTT_PORT   = 1883;
 
 const char* TOPIC_TEMP_OUT  = "digester/sensors/temp_outside";
@@ -47,7 +47,6 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
         if (msg == "/stir" || msg == "/stir_now" || msg == "stir") {
             stirrer.manualStir();
         }
-        // Future commands: /vent_gas, /heat_on, etc.
     }
 }
 
@@ -97,8 +96,10 @@ void setup() {
     }
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-        request->send(SPIFFS, "/dashboard.html", "text/html");
+        request->send(SPIFFS, "/dashboard_incl_foria.html", "text/html");
     });
+
+    server.serveStatic("/", SPIFFS, "/");
 
     server.begin();
     Serial.println("Web server started.");

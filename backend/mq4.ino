@@ -6,7 +6,7 @@
 // ── Pin & voltage divider ─────────────────────────────────────────────────────
 #define MQ4_PIN       34
 #define MQ4_RL        1.0f    // load resistor on breakout (kΩ)
-#define MQ4_DIVIDER   0.353f  // Vadc/Vsensor ratio: 1.8k/(1.8k+3.3k)
+#define MQ4_DIVIDER   0.647f  // Vadc/Vsensor ratio: 1.8k/(1.8k+3.3k)
 #define MQ4_VCC       5.0f
 
 // ── Calibration (update R0 after outdoor calibration) ─────────────────────────

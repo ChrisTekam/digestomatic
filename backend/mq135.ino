@@ -5,12 +5,12 @@
 
 // ── Pin & voltage divider ─────────────────────────────────────────────────────
 #define MQ135_PIN       35
-#define MQ135_RL        1.0f    // load resistor on breakout (kΩ)
-#define MQ135_DIVIDER   0.353f  // Vadc/Vsensor ratio: 1.8k/(1.8k+3.3k)
+#define MQ135_RL        10.0f    // load resistor on breakout (kΩ)
+#define MQ135_DIVIDER   0.647f  // Vadc/Vsensor ratio: 1.8k/(1.8k+3.3k)
 #define MQ135_VCC       5.0f
 
 // ── Calibration (update R0 after outdoor calibration) ─────────────────────────
-#define MQ135_R0        0.964f  // measured R0 in clean air (kΩ)
+#define MQ135_R0        480.7f  // measured R0 in clean air (kΩ)
 
 // ── Curve constants for CO₂ (log-log fit from datasheet) ─────────────────────
 // ppm = A * (Rs/R0)^B
