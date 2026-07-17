@@ -235,17 +235,23 @@
 
         .ai-input-row button:hover { opacity: 0.88; }
 
-        /* ── Stir button ── */
+        /* ── Stir button + timer row ── */
+        .stir-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
         #stir-btn {
-            width: 100%;
+            flex: 1 1 auto;
             background: var(--accent-g);
             border: none;
             border-radius: 8px;
             color: #000;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             font-weight: 700;
-            padding: 10px;
+            padding: 8px 6px;
             transition: opacity 0.2s, background 0.2s;
         }
 
@@ -257,6 +263,35 @@
             cursor: not-allowed;
             opacity: 0.6;
         }
+
+        #stir-timer-select {
+            flex: 0 0 auto;
+            width: 90px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 0.75rem;
+            padding: 0 6px;
+            cursor: pointer;
+        }
+
+        /* ── Download log button ── */
+        #download-log-btn {
+            width: 100%;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 8px;
+            margin-top: 8px;
+            transition: opacity 0.2s;
+        }
+
+        #download-log-btn:hover { opacity: 0.8; }
 
         /* ── Right column ── */
         .right-col {
@@ -468,7 +503,7 @@
 <div class="container" id="dashboard" style="display:none">
 
     <header>
-        <div style="display:flex; flex-direction: column; align-items:flex-start;">
+        <div style="display:flex; flex-direction: column; align-items:flex-start; justify-content:center; gap:2px;">
             <img class="logo logo-light" src="logo-light.png" alt="Team Eudaimonia logo" onerror="this.style.display='none'">
             <img class="logo logo-dark" src="logo-dark.png" alt="Team Eudaimonia logo" onerror="this.style.display='none'">
             <div class="brand">Team Eudaimonia</div>
@@ -492,8 +527,17 @@
                     <button id="ai-send-btn" onclick="sendAiMessage()">Send</button>
                 </div>
             </div>
-            <button id="stir-btn" onclick="manualStir()">Stir Now (1 min)</button>
-            
+            <div class="stir-row">
+                <button id="stir-btn" onclick="manualStir()">Stir Now</button>
+                <select id="stir-timer-select" title="Stir duration">
+                    <option value="30">30s</option>
+                    <option value="60" selected>1 min</option>
+                    <option value="120">2 min</option>
+                    <option value="180">3 min</option>
+                </select>
+            </div>
+            <button id="download-log-btn" onclick="downloadLog()">Download Sensor Log (.csv)</button>
+
             <div class="card footer-card">
                 <div class="footer-links">
                     <a href="https://github.com/ChrisTekam/digestomatic" target="_blank" rel="noopener noreferrer" class="footer-link">
@@ -683,21 +727,37 @@
         }
     }
 
-    // ── Stir button (debounced for 60 s) ─────────────────────────────────────
+    // ── Download sensor log (served by the ESP32 itself, not the bridge) ─────
+    function downloadLog() {
+        window.location.href = '/download-log';
+    }
+
+    // ── Stir button — runs the motor for the duration picked in the dropdown ──
     let stirCooldown = false;
 
     function manualStir() {
         if (stirCooldown) return;
         if (!bridgeOnline) { log("Bridge offline — cannot send stir command."); return; }
 
-        fetch(`${BRIDGE_URL}/stir`, { method: 'POST' }).catch(() => {});
-        log('Sent: "/stir" command to bridge');
-        aiEntry("Manual stir requested — motor will run for 1 minute.", "System");
+        const durationSec = parseInt(document.getElementById('stir-timer-select').value, 10) || 60;
+        sendStirNow(durationSec);
+    }
+
+    function sendStirNow(durationSec) {
+        fetch(`${BRIDGE_URL}/stir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ duration_sec: durationSec })
+        }).catch(() => {});
+        log(`Sent: "/stir" command (${durationSec}s) to bridge`);
+        aiEntry(`Manual stir requested — motor will run for ${durationSec} seconds.`, "System");
 
         stirCooldown = true;
         const btn = document.getElementById('stir-btn');
+        const select = document.getElementById('stir-timer-select');
         btn.disabled = true;
-        let remaining = 60;
+        select.disabled = true;
+        let remaining = durationSec;
         btn.textContent = `Stirring… (${remaining}s)`;
         const interval = setInterval(() => {
             remaining--;
@@ -705,7 +765,8 @@
                 clearInterval(interval);
                 stirCooldown = false;
                 btn.disabled = false;
-                btn.textContent = 'Stir Now (1 min)';
+                select.disabled = false;
+                btn.textContent = 'Stir Now';
                 aiEntry("Stir cycle complete.", "System");
             } else {
                 btn.textContent = `Stirring… (${remaining}s)`;

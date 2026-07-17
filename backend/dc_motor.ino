@@ -20,11 +20,12 @@
 
 class DCMotor {
 private:
-    bool          stirring       = false;
-    unsigned long stirStartTime  = 0;
-    unsigned long lastAutoStirAt = 0;
-    float         lastMethanePPM = -1.0f;
-    bool          hasBaseline    = false;
+    bool          stirring        = false;
+    unsigned long stirStartTime   = 0;
+    unsigned long stirDurationMs  = STIR_DURATION_MS; // set per-call by manualStir()/beginStir()
+    unsigned long lastAutoStirAt  = 0;
+    float         lastMethanePPM  = -1.0f;
+    bool          hasBaseline     = false;
 
     void driveForward(int speed) {
         digitalWrite(MOTOR_IN1, HIGH);
@@ -38,14 +39,17 @@ private:
         ledcWrite(MOTOR_ENA, 0);
     }
 
-    void beginStir(const char* reason) {
+    void beginStir(const char* reason, unsigned long durationMs) {
         if (stirring) return; // already running, ignore re-trigger
-        stirring = true;
+        stirring      = true;
+        stirDurationMs = durationMs;
         stirStartTime = millis();
         driveForward(MOTOR_SPEED);
         Serial.print("[MOTOR] Stir started (");
         Serial.print(reason);
-        Serial.println(")");
+        Serial.print(") for ");
+        Serial.print(durationMs / 1000UL);
+        Serial.println("s");
     }
 
 public:
@@ -59,7 +63,7 @@ public:
 
     // Call every loop() iteration — handles stir duration without blocking.
     void update() {
-        if (stirring && millis() - stirStartTime >= STIR_DURATION_MS) {
+        if (stirring && millis() - stirStartTime >= stirDurationMs) {
             stirring = false;
             driveStop();
             lastAutoStirAt = millis();
@@ -81,17 +85,19 @@ public:
 
         if (delta >= METHANE_DIP_THRESHOLD && !stirring && cooldownOver) {
             Serial.printf("[MOTOR] Methane dip detected (%.1f -> %.1f ppm)\n", lastMethanePPM, methanePPM);
-            beginStir("methane dip");
+            beginStir("methane dip", STIR_DURATION_MS);
         }
 
         lastMethanePPM = methanePPM;
     }
 
     // Manual trigger — call this on user request (Foria command or dashboard
-    // button), e.g. when an MQTT "/stir" command arrives.
-    void manualStir() {
+    // button), e.g. when an MQTT "/stir" command arrives. durationSec lets the
+    // dashboard's timer dropdown (30s–3min) control how long the motor runs;
+    // defaults to the standard 1-minute stir if not specified.
+    void manualStir(unsigned long durationSec = STIR_DURATION_MS / 1000UL) {
         Serial.println("[MOTOR] Manual stir requested.");
-        beginStir("manual request");
+        beginStir("manual request", durationSec * 1000UL);
     }
 
     bool isStirring() { return stirring; }

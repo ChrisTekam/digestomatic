@@ -127,6 +127,10 @@ class ChatRequest(BaseModel):
     message: str
 
 
+class StirRequest(BaseModel):
+    duration_sec: int | None = None
+
+
 @app.get("/sensors")
 def get_sensors():
     return sensor_data
@@ -141,10 +145,11 @@ def chat(req: ChatRequest):
 
 
 @app.post("/stir")
-def stir():
+def stir(req: StirRequest = StirRequest()):
     if mqtt_client:
-        mqtt_client.publish(TOPIC_COMMANDS, "/stir")
-        return {"status": "sent"}
+        command = f"/stir:{req.duration_sec}" if req.duration_sec else "/stir"
+        mqtt_client.publish(TOPIC_COMMANDS, command)
+        return {"status": "sent", "duration_sec": req.duration_sec}
     return {"status": "mqtt not connected"}
 
 

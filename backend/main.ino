@@ -9,6 +9,7 @@
 #include "dc_motor.ino"
 #include "mq4.ino"
 #include "mq135.ino"
+#include "data_logger.ino"
 
 // ── WiFi Config ───────────────────────────────────────────────────────────────
 const char* WIFI_SSID     = "Chris' A54";
@@ -44,8 +45,21 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
 
     if (String(topic) == TOPIC_COMMANDS) {
         // Manual stir requested by the user, via the dashboard button or Foria.
-        if (msg == "/stir" || msg == "/stir_now" || msg == "stir") {
-            stirrer.manualStir();
+        // Supports an optional ":<seconds>" suffix, e.g. "/stir:90", so the
+        // dashboard's timer dropdown can control stir duration. Falls back to
+        // the default 1-minute stir if no duration is given.
+        if (msg.startsWith("/stir") || msg == "stir") {
+            int colonIdx = msg.indexOf(':');
+            if (colonIdx >= 0) {
+                unsigned long durationSec = msg.substring(colonIdx + 1).toInt();
+                if (durationSec > 0) {
+                    stirrer.manualStir(durationSec);
+                } else {
+                    stirrer.manualStir();
+                }
+            } else {
+                stirrer.manualStir();
+            }
         }
     }
 }
@@ -77,6 +91,7 @@ void setup() {
     initMotor();
     initMQ4();
     initMQ135();
+    initDataLogger();
 
     // Connect to WiFi
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -97,6 +112,17 @@ void setup() {
 
     server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
         request->send(SPIFFS, "/dashboard_incl_foria.html", "text/html");
+    });
+
+    server.on("/download-log", HTTP_GET, [](AsyncWebServerRequest *request) {
+        if (!SPIFFS.exists(LOG_FILE_PATH)) {
+            request->send(404, "text/plain", "No log data yet.");
+            return;
+        }
+        AsyncWebServerResponse *response = request->beginResponse(
+            SPIFFS, LOG_FILE_PATH, "text/csv");
+        response->addHeader("Content-Disposition", "attachment; filename=\"sensor_log.csv\"");
+        request->send(response);
     });
 
     server.serveStatic("/", SPIFFS, "/");
@@ -149,5 +175,7 @@ void loop() {
             dtostrf(co2PPM, 1, 2, buf);
             mqttClient.publish(TOPIC_CO2, buf);
         }
+
+        dataLogger.addRow(tempOutside, tempInternal, methanePPM, co2PPM);
     }
 }
