@@ -9,13 +9,15 @@
 #define MQ135_DIVIDER   0.647f  // Vadc/Vsensor ratio: 1.8k/(1.8k+3.3k)
 #define MQ135_VCC       5.0f
 
-// ── Calibration (update R0 after outdoor calibration) ─────────────────────────
-#define MQ135_R0        480.7f  // measured R0 in clean air (kΩ)
+// ── Calibration (refit using field measurements) ──────────────────────────
+// Anchor 1: outdoor air, Rs≈116.5kΩ  -> 400 ppm
+// Anchor 2: closed room,  Rs≈90kΩ    -> 900 ppm
+#define MQ135_R0        144.9f   // outdoor clean-air baseline (kΩ)
 
-// ── Curve constants for CO₂ (log-log fit from datasheet) ─────────────────────
+// ── Curve constants for CO₂ (refit from two field anchor points) ─────────────
 // ppm = A * (Rs/R0)^B
-#define MQ135_A         116.602f
-#define MQ135_B         -2.769f
+#define MQ135_A         208.2f
+#define MQ135_B         -3.142f
 
 float readMQ135Rs() {
     int   raw          = analogRead(MQ135_PIN);

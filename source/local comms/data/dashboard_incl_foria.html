@@ -892,21 +892,27 @@
         if (sensor === 'methane') pendingMethane = val;
         if (sensor === 'co2')     pendingCO2     = val;
         lastTs = ts;
+        // Chart points are now taken on a fixed timer (see startChartSampling),
+        // not per-message, since CH4 and CO2 arrive as separate MQTT messages
+        // that don't land in the same tick.
+    }
 
+    function sampleChart() {
+        if (!gasChart) return;
         if (pendingMethane === null && pendingCO2 === null) return;
+
+        const ts = lastTs || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
         if (gasChart.data.labels.length >= MAX_PTS) {
             gasChart.data.labels.shift();
             gasChart.data.datasets.forEach(d => d.data.shift());
         }
-        gasChart.data.labels.push(lastTs);
+        gasChart.data.labels.push(ts);
         gasChart.data.datasets[0].data.push(pendingMethane);
         gasChart.data.datasets[1].data.push(pendingCO2);
         gasChart.update();
-
-        pendingMethane = null;
-        pendingCO2     = null;
     }
+    setInterval(sampleChart, 3000);
 
     // ── Clock ─────────────────────────────────────────────────────────────────
     function updateClock() {
