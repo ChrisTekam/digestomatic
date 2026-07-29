@@ -16,7 +16,7 @@ const char* WIFI_SSID     = "Chris' A54";
 const char* WIFI_PASSWORD = "hello123";
 
 // ── MQTT Config ───────────────────────────────────────────────────────────────
-const char* MQTT_SERVER = "10.210.232.202";
+const char* MQTT_SERVER = "10.163.92.202";
 const int   MQTT_PORT   = 1883;
 
 const char* TOPIC_TEMP_OUT  = "digester/sensors/temp_outside";
