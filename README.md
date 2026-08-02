@@ -58,11 +58,3 @@ See the libraries folder for the .zip files.
 ## Credits
 
 Special thanks to Mr. Samuel Kuik (SlimGas N.V.), Mr. Stefanito Soerotomo, Mr. H. Sariman, Mr. A Dasoe, Mr. C. Kartopawiro, Ms. Julie Sundar, Mr. Theo Boomsma for their guidance during prototyping.
-
-## License
-
-<!-- Add license info here, e.g. MIT -->
-
----
-
-<p align="center"><i>Built for Hackomation 2026 — turning organic waste into renewable energy, one digester at a time.</i></p>
