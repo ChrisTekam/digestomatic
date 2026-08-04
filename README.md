@@ -2,7 +2,7 @@
 
 Digestomatic is a smart biodigester prototype that integrates **IoT, AI, and automation** to improve the usability and gas output of home-scale anaerobic digesters. Using an **ESP32**, dedicated gas and temperature sensors, and a locally hosted web dashboard, the system continuously monitors conditions inside the digester. A local LLM (**Foria**) interprets the data and answers user questions, while an automated DC motor stirrer keeps the substrate mixed to maximize methane production.
 
-Biodigesters solve two problems at once: they divert organic waste from dumping/burning, and they produce renewable gas. Most existing biodigesters, however, are **passive** — no monitoring, no control, no visibility into what's happening inside the tank. Digestomatic changes that.
+Biodigesters solve two problems at once: they divert organic waste from dumping/burning, and they produce renewable gas. Most existing biodigesters, however, are **passive** — no monitoring, no control, no visibility into what's happening inside the tank. Digestomatic aims to solve that and go beyond by integrating A.I.
 
 ## Features
 
