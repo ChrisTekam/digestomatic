@@ -11,7 +11,7 @@ from pydantic import BaseModel
 import uvicorn
 
 # --- Configuration ---
-MQTT_BROKER = "10.163.92.202"
+MQTT_BROKER = "10.106.251.202"
 MQTT_PORT = 1883
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "llama3.2"

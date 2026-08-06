@@ -16,7 +16,7 @@ const char* WIFI_SSID     = "Chris' A54";
 const char* WIFI_PASSWORD = "hello123";
 
 // ── MQTT Config ───────────────────────────────────────────────────────────────
-const char* MQTT_SERVER = "10.163.92.202";
+const char* MQTT_SERVER = "10.106.251.202";
 const int   MQTT_PORT   = 1883;
 
 const char* TOPIC_TEMP_OUT  = "digester/sensors/temp_outside";
@@ -44,10 +44,7 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     Serial.println(msg);
 
     if (String(topic) == TOPIC_COMMANDS) {
-        // Manual stir requested by the user, via the dashboard button or Foria.
-        // Supports an optional ":<seconds>" suffix, e.g. "/stir:90", so the
-        // dashboard's timer dropdown can control stir duration. Falls back to
-        // the default 1-minute stir if no duration is given.
+        // Manual stir, optionally "/stir:<seconds>"
         if (msg.startsWith("/stir") || msg == "stir") {
             int colonIdx = msg.indexOf(':');
             if (colonIdx >= 0) {
@@ -139,7 +136,7 @@ void loop() {
     if (!mqttClient.connected()) reconnectMQTT();
     mqttClient.loop();
 
-    stirrer.update(); // non-blocking — handles the 1-minute stir timing
+    stirrer.update(); // non-blocking — handles stir timing + independent 30-min auto-stir schedule
 
     if (sensorTimer.isReady()) {
         float tempOutside  = readDHT();
@@ -168,7 +165,6 @@ void loop() {
         if (methanePPM >= 0.0f) {
             dtostrf(methanePPM, 1, 2, buf);
             mqttClient.publish(TOPIC_METHANE, buf);
-            stirrer.checkMethaneDip(methanePPM); // auto-stir on methane dip
         }
 
         if (co2PPM >= 0.0f) {
