@@ -25,7 +25,7 @@ Biodigesters solve two problems at once: they divert organic waste from dumping/
 
 ## Getting Started
 
-1. Flash `/source/"local comms"/` (all .ino files and the data folder) to an ESP32 using Arduino IDE (see required libraries below).
+1. Flash `/source/` (all .ino files and the data folder) to an ESP32 using Arduino IDE (see required libraries below).
 2. Configure WiFi + MQTT broker credentials in `main.ino`.
 3. Run `foria_bridge.py` locally (requires [Ollama](https://ollama.ai) with `llama3.2` pulled).
 4. Open the dashboard served by the ESP32, or access it directly from `/dashboard`.
@@ -45,7 +45,7 @@ See the libraries folder for the .zip files.
 
 ## Team Eudaimonia
 
-*Eudaimonia (εὐδαιμονία)* — Greek for "human flourishing." Our team consists of 5 AdeKUS students, Mechanical & Electrical Engineering.
+*Eudaimonia (εὐδαιμονία)* — Greek for "human flourishing." Our team consists of 5 AdeKUS students, from the BSc. Mechanical & Electrical Engineering program.
 
 | Name | Role |
 |---|---|
@@ -57,4 +57,4 @@ See the libraries folder for the .zip files.
 
 ## Credits
 
-Special thanks to Mr. Samuel Kuik (SlimGas N.V.), Mr. Stefanito Soerotomo, Mr. H. Sariman, Mr. A Dasoe, Mr. C. Kartopawiro, Ms. Julie Sundar, Mr. Theo Boomsma for their guidance during prototyping.
+Special thanks to Mr. Samuel Kuik (SlimGas N.V.), Mr. Stefanito Soerotomo, Mr. H. Sariman, Mr. A Dasoe, Mr. C. Kartopawiro, Ms. Julie Sundar, and Mr. Theo Boomsma for their guidance during prototyping.
