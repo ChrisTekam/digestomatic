@@ -11,28 +11,25 @@
 #include "mq135.ino"
 #include "data_logger.ino"
 
-// ── WiFi Config ───────────────────────────────────────────────────────────────
-const char* WIFI_SSID     = "Chris' A54";
+const char* WIFI_SSID = "Chris' A54";
 const char* WIFI_PASSWORD = "hello123";
 
-// ── MQTT Config ───────────────────────────────────────────────────────────────
 const char* MQTT_SERVER = "10.106.251.202";
-const int   MQTT_PORT   = 1883;
+const int MQTT_PORT = 1883;
 
-const char* TOPIC_TEMP_OUT  = "digester/sensors/temp_outside";
-const char* TOPIC_TEMP_IN   = "digester/sensors/temp_internal";
-const char* TOPIC_HUM_OUT   = "digester/sensors/humidity_outside";
-const char* TOPIC_METHANE   = "digester/sensors/methane";
-const char* TOPIC_CO2       = "digester/sensors/co2";
-const char* TOPIC_COMMANDS  = "digester/control/commands"; // e.g. "/stir" from dashboard or Foria
+const char* TOPIC_TEMP_OUT = "digester/sensors/temp_outside";
+const char* TOPIC_TEMP_IN = "digester/sensors/temp_internal";
+const char* TOPIC_HUM_OUT = "digester/sensors/humidity_outside";
+const char* TOPIC_METHANE = "digester/sensors/methane";
+const char* TOPIC_CO2 = "digester/sensors/co2";
+const char* TOPIC_COMMANDS = "digester/control/commands";
 
-WiFiClient   espClient;
+WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 AsyncWebServer server(80);
 
-CustomTimer sensorTimer(5000); // 5-second interval
+CustomTimer sensorTimer(5000);
 
-// ── MQTT ─────────────────────────────────────────────────────────────────────
 void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     String msg;
     for (unsigned int i = 0; i < length; i++) msg += (char)payload[i];
@@ -44,7 +41,6 @@ void onMqttMessage(char* topic, byte* payload, unsigned int length) {
     Serial.println(msg);
 
     if (String(topic) == TOPIC_COMMANDS) {
-        // Manual stir, optionally "/stir:<seconds>"
         if (msg.startsWith("/stir") || msg == "stir") {
             int colonIdx = msg.indexOf(':');
             if (colonIdx >= 0) {
@@ -77,7 +73,6 @@ void reconnectMQTT() {
     }
 }
 
-// ── Setup ─────────────────────────────────────────────────────────────────────
 void setup() {
     Serial.begin(115200);
     analogReadResolution(12);
@@ -90,7 +85,6 @@ void setup() {
     initMQ135();
     initDataLogger();
 
-    // Connect to WiFi
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     Serial.print("Connecting to WiFi");
     while (WiFi.status() != WL_CONNECTED) {
@@ -101,7 +95,6 @@ void setup() {
     Serial.print("Dashboard: http://");
     Serial.println(WiFi.localIP());
 
-    // SPIFFS for serving dashboard.html
     if (!SPIFFS.begin(true)) {
         Serial.println("SPIFFS mount failed.");
         return;
@@ -131,25 +124,24 @@ void setup() {
     mqttClient.setCallback(onMqttMessage);
 }
 
-// ── Loop ──────────────────────────────────────────────────────────────────────
 void loop() {
     if (!mqttClient.connected()) reconnectMQTT();
     mqttClient.loop();
 
-    stirrer.update(); // non-blocking — handles stir timing + independent 30-min auto-stir schedule
+    stirrer.update();
 
     if (sensorTimer.isReady()) {
-        float tempOutside  = readDHT();
-        float humOutside   = readDHTHumidity();
+        float tempOutside = readDHT();
+        float humOutside = readDHTHumidity();
         float tempInternal = readDS18B20();
-        float methanePPM   = readMQ4PPM();
-        float co2PPM       = readMQ135PPM();
+        float methanePPM = readMQ4PPM();
+        float co2PPM = readMQ135PPM();
 
-        Serial.print("Outside: ");  Serial.print(tempOutside,  1); Serial.print(" °C  |  ");
-        Serial.print("Humidity: "); Serial.print(humOutside,   1); Serial.print(" %  |  ");
+        Serial.print("Outside: "); Serial.print(tempOutside, 1); Serial.print(" °C  |  ");
+        Serial.print("Humidity: "); Serial.print(humOutside, 1); Serial.print(" %  |  ");
         Serial.print("Internal: "); Serial.print(tempInternal, 1); Serial.print(" °C  |  ");
-        Serial.print("CH4: ");      Serial.print(methanePPM,   1); Serial.print(" ppm  |  ");
-        Serial.print("CO2: ");      Serial.print(co2PPM,       1); Serial.println(" ppm");
+        Serial.print("CH4: "); Serial.print(methanePPM, 1); Serial.print(" ppm  |  ");
+        Serial.print("CO2: "); Serial.print(co2PPM, 1); Serial.println(" ppm");
 
         char buf[10];
 

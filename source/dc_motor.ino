@@ -3,28 +3,25 @@
 
 #include <Arduino.h>
 
-// ── Motor pins (L298N driver) ──────────────────────────────────────
-#define MOTOR_ENA 25   // PWM speed control
+#define MOTOR_ENA 25
 #define MOTOR_IN1 26
 #define MOTOR_IN2 27
 
-// ── PWM config (ESP32 Arduino core v3.x API — ledcAttach/ledcWrite by pin) ─────
-#define MOTOR_PWM_FREQ  1000
-#define MOTOR_PWM_RES   8        // 0–255
-#define MOTOR_SPEED     200      // default stir speed (0-255)
+#define MOTOR_PWM_FREQ 1000
+#define MOTOR_PWM_RES 8
+#define MOTOR_SPEED 200
 
-// ── Stirring behaviour ──────────────────────────────────────────────────────────
-#define STIR_DURATION_MS      60000UL     // stir for 1 minute
-#define AUTO_STIR_INTERVAL_MS 1800000UL   // automatic stir every 30 minutes
+#define STIR_DURATION_MS 60000UL
+#define AUTO_STIR_INTERVAL_MS 1800000UL
 
 class DCMotor {
 private:
-    bool          stirring        = false;
-    bool          isAutoStir      = false;         // true if the current stir was auto-triggered
-    unsigned long stirStartTime   = 0;
-    unsigned long stirDurationMs  = STIR_DURATION_MS; // set per-call by manualStir()/beginStir()
-    unsigned long nextAutoStirAt  = 0;              // millis() timestamp of next scheduled auto-stir
-    bool          autoTimerStarted = false;
+    bool stirring = false;
+    bool isAutoStir = false;
+    unsigned long stirStartTime = 0;
+    unsigned long stirDurationMs = STIR_DURATION_MS;
+    unsigned long nextAutoStirAt = 0;
+    bool autoTimerStarted = false;
 
     void driveForward(int speed) {
         digitalWrite(MOTOR_IN1, HIGH);
@@ -39,11 +36,11 @@ private:
     }
 
     void beginStir(const char* reason, unsigned long durationMs, bool auto_) {
-        if (stirring) return; // already running, ignore re-trigger
-        stirring       = true;
-        isAutoStir     = auto_;
+        if (stirring) return;
+        stirring = true;
+        isAutoStir = auto_;
         stirDurationMs = durationMs;
-        stirStartTime  = millis();
+        stirStartTime = millis();
         driveForward(MOTOR_SPEED);
         Serial.print("[MOTOR] Stir started (");
         Serial.print(reason);
@@ -63,7 +60,6 @@ public:
         Serial.println("[MOTOR] Stirrer initialized (ENA=25, IN1=26, IN2=27)");
     }
 
-    // Handles stir duration + the independent 30-min auto-stir schedule. Manual stirs don't affect it.
     void update() {
         if (stirring && millis() - stirStartTime >= stirDurationMs) {
             stirring = false;
@@ -72,7 +68,6 @@ public:
         }
 
         if (autoTimerStarted && millis() >= nextAutoStirAt) {
-            // advance schedule regardless of whether this stir actually runs
             nextAutoStirAt += AUTO_STIR_INTERVAL_MS;
             if (!stirring) {
                 Serial.println("[MOTOR] Scheduled 30-min auto-stir triggered.");
@@ -83,7 +78,6 @@ public:
         }
     }
 
-    // Manual trigger (dashboard/Foria). durationSec optional. Doesn't affect the auto-stir schedule.
     void manualStir(unsigned long durationSec = STIR_DURATION_MS / 1000UL) {
         Serial.println("[MOTOR] Manual stir requested.");
         beginStir("manual request", durationSec * 1000UL, false);

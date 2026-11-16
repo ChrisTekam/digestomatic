@@ -4,18 +4,10 @@
 #include <Arduino.h>
 #include <SPIFFS.h>
 
-// ── Configurable log size ───────────────────────────────────────────────────
-// Change this to adjust how many rows are kept (ring buffer — oldest row is
-// overwritten first once the buffer is full). At ~28 bytes/row, 500 rows is
-// ~14 KB, a tiny fraction of the SPIFFS partition.
 #define MAX_LOG_ROWS 500
 
 #define LOG_FILE_PATH "/sensor_log.csv"
 
-// CSV header — matches column order written per row.
-// time_s = seconds since ESP32 boot (millis()/1000). Kept numeric on purpose
-// so it imports cleanly into MATLAB (readmatrix/readtable) without a
-// timestamp-parsing step.
 static const char* LOG_HEADER = "time_s,temp_outside_C,temp_internal_C,ch4_ppm,co2_ppm";
 
 struct LogRow {
@@ -35,8 +27,6 @@ private:
 
 public:
     void begin() {
-        // Nothing to load back in — buffer starts empty each boot. The file
-        // on SPIFFS is rewritten fresh as new rows come in.
     }
 
     void addRow(float tempOutside, float tempInternal, float ch4Ppm, float co2Ppm) {
@@ -58,10 +48,6 @@ public:
         flushToFile();
     }
 
-    // Rewrites the CSV file on SPIFFS from the current ring buffer contents,
-    // oldest row first. Called after every new row so the download is always
-    // up to date; if this becomes too much flash wear, add a "flush every N
-    // rows" throttle later using a static counter here.
     void flushToFile() {
         File f = SPIFFS.open(LOG_FILE_PATH, FILE_WRITE);
         if (!f) {

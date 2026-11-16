@@ -10,23 +10,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-# --- Configuration ---
 MQTT_BROKER = "10.106.251.202"
 MQTT_PORT = 1883
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "llama3.2"
-HTTP_PORT = 8000  # dashboard talks to this over plain HTTP, no websockets needed
+HTTP_PORT = 8000
 
-# MQTT Topics
-TOPIC_TEMP_OUT  = "digester/sensors/temp_outside"
-TOPIC_TEMP_IN   = "digester/sensors/temp_internal"
-TOPIC_METHANE   = "digester/sensors/methane"
-TOPIC_CO2       = "digester/sensors/co2"
-TOPIC_COMMANDS  = "digester/control/commands"
-TOPIC_AI_REQ    = "digester/ai/request"
-TOPIC_AI_RES    = "digester/ai/response"
+TOPIC_TEMP_OUT = "digester/sensors/temp_outside"
+TOPIC_TEMP_IN = "digester/sensors/temp_internal"
+TOPIC_METHANE = "digester/sensors/methane"
+TOPIC_CO2 = "digester/sensors/co2"
+TOPIC_COMMANDS = "digester/control/commands"
+TOPIC_AI_REQ = "digester/ai/request"
+TOPIC_AI_RES = "digester/ai/response"
 
-# Global state to hold latest sensor readings
 sensor_data = {
     "digester_temp": "--",
     "ambient_temp": "--",
@@ -35,14 +32,13 @@ sensor_data = {
     "timestamp": "--"
 }
 
-mqtt_client = None  # set in mqtt_thread()
+mqtt_client = None
 
 
 def load_system_prompt():
     try:
         with open("foria_system_prompt.md", "r", encoding="utf-8") as f:
             prompt = f.read()
-            # Inject live sensor data
             prompt = prompt.replace("{digester_temp}", str(sensor_data["digester_temp"]))
             prompt = prompt.replace("{ambient_temp}", str(sensor_data["ambient_temp"]))
             prompt = prompt.replace("{ch4_ppm}", str(sensor_data["ch4_ppm"]))
@@ -72,7 +68,6 @@ def ask_ollama(user_prompt):
         return "Error: Could not connect to the local Llama 3.2 model."
 
 
-# ── MQTT callbacks (sensors + ESP32 stay exactly as before) ─────────────────
 def on_connect(client, userdata, flags, rc):
     print("Connected to MQTT broker.")
     client.subscribe([(TOPIC_TEMP_OUT, 0), (TOPIC_TEMP_IN, 0),
@@ -94,7 +89,6 @@ def on_message(client, userdata, msg):
     elif topic == TOPIC_CO2:
         sensor_data["co2_ppm"] = payload
     elif topic == TOPIC_AI_REQ:
-        # Still supported in case anything else publishes AI requests over MQTT
         print(f"Received AI Request via MQTT: {payload}")
         reply = ask_ollama(payload)
         print(f"Foria Reply: {reply}")
@@ -112,7 +106,6 @@ def mqtt_thread():
     mqtt_client.loop_forever()
 
 
-# ── HTTP API for the dashboard — plain HTTP only, no websockets ─────────────
 app = FastAPI()
 
 app.add_middleware(
@@ -140,7 +133,7 @@ def get_sensors():
 def chat(req: ChatRequest):
     reply = ask_ollama(req.message)
     if mqtt_client:
-        mqtt_client.publish(TOPIC_AI_RES, reply)  # keep other MQTT subscribers in sync
+        mqtt_client.publish(TOPIC_AI_RES, reply)
     return {"reply": reply}
 
 
